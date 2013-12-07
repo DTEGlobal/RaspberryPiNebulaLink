@@ -1,0 +1,17 @@
+<UpdateStateData>
+  <Automatic>true</Automatic>
+  <Efficiency>28</Efficiency>
+  <KickoffCount>21</KickoffCount>
+  <MessageNumber>95</MessageNumber>
+  <NoLoad>false</NoLoad>
+  <NoPosition>true</NoPosition>
+  <PercentFillage>9</PercentFillage>
+  <PercentFillageSetting>0</PercentFillageSetting>
+  <PumpOff>true</PumpOff>
+  <SecondsToNextStart>295</SecondsToNextStart>
+  <SignalStrength>10</SignalStrength>
+  <StrokesLastCycle>28</StrokesLastCycle>
+  <StrokesThisCycle>0</StrokesThisCycle>
+  <TimeOut>0</TimeOut>
+  <WellStatus>true</WellStatus>
+</UpdateStateData>
