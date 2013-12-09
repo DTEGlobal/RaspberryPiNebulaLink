@@ -14,8 +14,11 @@ __author__ = 'Cesar'
 import time
 import serial
 import threading
+import bitState
+import apiClient
 
-messageToSend = 'MD0'
+messageToSend = 'Config'
+responseToServer = ''
 tenSec = 0
 Rx = True
 errorCounter = 0
@@ -34,19 +37,29 @@ def errorCleanUp(error):
     tenSec = 0
     errorCounter = 0
     Rx = False
-    messageToSend = 'MD0'
+    messageToSend = 'Config'
     port.flushOutput()
     print("TxST: Error->[{}]".format(error))
 
 
 def SendCommand():
-    global tenSec, Rx, messageToSend, errorCounter, _38, _39
+    global tenSec, Rx, messageToSend, errorCounter, _38, _39, responseToServer
 
     print("TxST: SendCommand Thread Running ...")
     port.flushOutput()
 
+    waitingForConsoleCommand = False
+
     while True:
-        if messageToSend == 'MD0':
+        if apiClient.Command:
+            print 'Command = '+apiClient.G4Command
+            command = apiClient.G4Command+"\x0D"
+            waitingForConsoleCommand = True
+            Rx = True
+        elif messageToSend == 'Config':
+            command = "00SZ50132\x0D"
+            Rx = True
+        elif messageToSend == 'MD0':
             command = "00MD0\x0D"
             Rx = True
         elif messageToSend == 'M1':
@@ -84,10 +97,24 @@ def SendCommand():
                 data_toPrint = MessageFromSerial[:-2]
                 # print("[{}]RxST: Rx Data->[{}]".format(time.clock(), data_toPrint))
                 # Check Rx contents
-                if MessageFromSerial[3] == 'D':
+                if waitingForConsoleCommand:
+                    Rx = False
+                    messageToSend = 'MD0'
+                    if MessageFromSerial == '':
+                        responseToServer = 'Error: Time Out'
+                    else:
+                        responseToServer = MessageFromSerial
+                    print ('Console Command Response: '+responseToServer)
+                    waitingForConsoleCommand = False
+                    apiClient.Command = False
+                elif MessageFromSerial[3] == 'Z':
+                    Rx = False
+                    messageToSend = 'MD0'
+                    print ('Configured! '+MessageFromSerial)
+                elif MessageFromSerial[3] == 'D':
                     Rx = False
                     messageToSend = 'M1'
-                    _39 = MessageFromSerial
+                    _39 = MessageFromSerial[5:]
                 elif MessageFromSerial[3] == '1':
                     Rx = False
                     messageToSend = 'M2'
@@ -148,70 +175,76 @@ def getDyna():
             except ValueError as e:
                 return ''
 
+
 def getAutomaticStatus():
-    # TODO: Not in Tab code
-    return 'N/A'
+    return bitState.getBitState(_39[14:16], 1)
 
 
-def getTodayRuntime():
-    TodayRuntime = int(MB[38:42], 16)
-    if bitState.getBitState(E[16:17], 1) == 'true':
+def getTime():
+    hours = int(_39[20:22])
+    min = int(_39[22:24])
+
+    return (hours*3600)+(min*60)
+
+
+def getTodayRuntimePercent():
+    TodayRuntime = int(_39[52:56], 16)
+    if bitState.getBitState(_39[18:20], 1) == 'true':
         TodayRuntime += 65535
-    return TodayRuntime
+    return str((TodayRuntime*100)/getTime())
 
 
 def getKickoffCount():
-    return 0  # Not used
+    return '0'  # Not used
 
 
 def getMessageNumber():
-    return 0  # Not used
+    return '0'  # Not used
 
 
 def getNoLoad():
-    # TODO: Not in Tab code
-    return 'N/A'
+    return bitState.getBitState(_39[14:16], 2)
 
 
 def getNoPosition():
-    # TODO: Not in Tab code
-    return 'N/A'
+    return bitState.getBitState(_39[14:16], 3)
 
 
 def getPercentFillage():
-    # TODO: Not in Tab code
-    return 'N/A'
+    return str(int(_39[34:36], 16))
 
 
 def getPercentFillageSetting():
-    return int(S_1[33:35], 16)*10
+    return str(int(_39[36:38])*10)
 
 
 def getPumpOff():
-    return bitState.getBitState(E[16:17], 2)
+    return bitState.getBitState(_39[18:20], 2)
 
 
 def getSecondsToNextStart():
-    # TODO: ???? no minutes? ..
-    return 'N/A'
+    return str(65535 - int(_39[64:68], 16))
 
 
 def getSignalStrength():
-    return 1  # Not used
+    return '0'  # Not used
 
 
 def getStrokesLastCycle():
-    return int(MB[42:46], 16)
+    return str(int(_39[56:60], 16))
 
 
 def getStrokesThisCycle():
-    return int(MB[25:29], 16)
+    return str(int(_39[40:44], 16))
 
 
 def getTimeOut():
-    return 256 - int(S_1[29:31], 16)
+    return str(256 - int(_39[48:50], 16))
 
 
 def getWellStatus():
-    return bitState.getBitState(E[24:25], 3)
+    if bitState.getBitState(_39[12:14], 7) == 'true':
+        return 'false'
+    else:
+        return 'true'
 
