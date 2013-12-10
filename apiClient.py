@@ -39,8 +39,11 @@ def updateServer():
         Automatic.text = Petrolog.getAutomaticStatus()
 
         Efficiency = UpdateStateData.getroot().find('Efficiency')
-        if Petrolog.getTodayRuntimePercent != 'error':
+        if int(Petrolog.getTodayRuntimePercent()) < 100:
             Efficiency.text = Petrolog.getTodayRuntimePercent()
+        else:
+            Efficiency.text = '100'
+
 
         KickoffCount = UpdateStateData.getroot().find('KickoffCount')
         KickoffCount.text = Petrolog.getKickoffCount()
@@ -80,14 +83,14 @@ def updateServer():
 
         WellStatus = UpdateStateData.getroot().find('WellStatus')
         WellStatus.text = Petrolog.getWellStatus()
-
+        print(myXML.tostring(UpdateStateData.getroot()))
         req = urllib2.Request(url='http://petrologtest.intelectix.com/api/state',
                               data=myXML.tostring(UpdateStateData.getroot()),
                               headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
         try:
             urllib2.urlopen(req)
-        except URLError:
-            print 'State Data Update - Failed to open connection to server!'
+        except URLError as e:
+            print 'State Data Update - Failed to open connection to server! - '+e.reason
 
         # Update Graph
         time.sleep(2.5)

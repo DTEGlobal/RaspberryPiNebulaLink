@@ -193,7 +193,7 @@ def getTodayRuntimePercent():
     try:
         return str((TodayRuntime*100)/getTime())
     except ZeroDivisionError:
-        return 'error'
+        return '200'  # > 100 = error
 
 
 def getKickoffCount():
