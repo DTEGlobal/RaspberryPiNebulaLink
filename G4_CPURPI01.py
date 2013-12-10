@@ -52,7 +52,6 @@ def SendCommand():
 
     while True:
         if apiClient.Command:
-            print 'Command = '+apiClient.G4Command
             command = apiClient.G4Command+"\x0D"
             waitingForConsoleCommand = True
             Rx = True
@@ -103,7 +102,7 @@ def SendCommand():
                     if MessageFromSerial == '':
                         responseToServer = 'Error: Time Out'
                     else:
-                        responseToServer = MessageFromSerial
+                        responseToServer = MessageFromSerial[:-2]
                     print ('Console Command Response: '+responseToServer)
                     waitingForConsoleCommand = False
                     apiClient.Command = False
@@ -191,7 +190,10 @@ def getTodayRuntimePercent():
     TodayRuntime = int(_39[52:56], 16)
     if bitState.getBitState(_39[18:20], 1) == 'true':
         TodayRuntime += 65535
-    return str((TodayRuntime*100)/getTime())
+    try:
+        return str((TodayRuntime*100)/getTime())
+    except ZeroDivisionError:
+        return 'error'
 
 
 def getKickoffCount():

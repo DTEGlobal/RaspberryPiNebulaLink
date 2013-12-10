@@ -1,3 +1,5 @@
+from urllib2 import URLError
+
 __author__ = 'Cesar'
 
 #-------------------------------------------------------------------------------
@@ -37,7 +39,8 @@ def updateServer():
         Automatic.text = Petrolog.getAutomaticStatus()
 
         Efficiency = UpdateStateData.getroot().find('Efficiency')
-        Efficiency.text = Petrolog.getTodayRuntimePercent()
+        if Petrolog.getTodayRuntimePercent != 'error':
+            Efficiency.text = Petrolog.getTodayRuntimePercent()
 
         KickoffCount = UpdateStateData.getroot().find('KickoffCount')
         KickoffCount.text = Petrolog.getKickoffCount()
@@ -81,7 +84,10 @@ def updateServer():
         req = urllib2.Request(url='http://petrologtest.intelectix.com/api/state',
                               data=myXML.tostring(UpdateStateData.getroot()),
                               headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
-        urllib2.urlopen(req)
+        try:
+            urllib2.urlopen(req)
+        except URLError:
+            print 'State Data Update - Failed to open connection to server!'
 
         # Update Graph
         time.sleep(2.5)
@@ -96,15 +102,15 @@ def updateServer():
                         '<string xmlns="http://schemas.microsoft.com/2003/10/Serialization/Arrays">'
                          +str(p[0])+','+str(p[1])+'</string>'))
             try:
-                print points[0].text
                 tempDyna = myXML.tostring(GraphData.getroot())
-                print (tempDyna)
-
                 req = urllib2.Request(url='http://petrologtest.intelectix.com/api/graph',
                                       data=tempDyna,
                                       headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
-                urllib2.urlopen(req)
-            except IndexError as e:
+                try:
+                    urllib2.urlopen(req)
+                except URLError:
+                    print 'Dyna Update - Failed to open connection to server!'
+            except IndexError:
                 print "Empty XML"
         else:
             print 'Empty Dyna'
@@ -113,37 +119,35 @@ def updateServer():
         time.sleep(2.5)
         req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
                                       headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
-        resp = urllib2.urlopen(req)
-        s = resp.read()
-        respuesta = myXML.ElementTree(myXML.fromstring(s))
-
-        commands = respuesta.iter(tag='Command')
-        for command in commands:
-            print command.text
-            Command = True
-            G4Command = command.text
-
-
-        commandsIds = respuesta.iter(tag='ConsoleCommandId')
-        for commandId in commandsIds:
-            print commandId.text
-            id = commandId.text
-            while Petrolog.responseToServer == '':
-                time.sleep(.01)
-
-            req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
-                                         data='<CommandResponse>'
-                                                    '<ConsoleCommandId>'
-                                                        +id+
-                                                    '</ConsoleCommandId>'
-                                                    '<Response>'
-                                                        +Petrolog.responseToServer+
-                                                    '</Response>'
-                                              '</CommandResponse>',
-                                         headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
-
-            Petrolog.responseToServer = ''
+        try:
             resp = urllib2.urlopen(req)
-            print id+"....."
-            print resp.read()
+            s = resp.read()
+            respuesta = myXML.ElementTree(myXML.fromstring(s))
 
+            commands = respuesta.iter(tag='Command')
+            for command in commands:
+                print 'Command from server: '+command.text
+                Command = True
+                G4Command = command.text
+            commandsIds = respuesta.iter(tag='ConsoleCommandId')
+            for commandId in commandsIds:
+                print 'Command ID: '+commandId.text
+                id = commandId.text
+                while Petrolog.responseToServer == '':
+                    time.sleep(.01)
+                req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
+                                             data='<CommandResponse>'
+                                                        '<ConsoleCommandId>'
+                                                            +id+
+                                                        '</ConsoleCommandId>'
+                                                        '<Response>'
+                                                            +Petrolog.responseToServer+
+                                                        '</Response>'
+                                                  '</CommandResponse>',
+                                             headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
+
+                Petrolog.responseToServer = ''
+                resp = urllib2.urlopen(req)
+
+        except URLError:
+            print 'Console Command - Failed to open connection to server!'
