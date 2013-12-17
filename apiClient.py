@@ -83,14 +83,14 @@ def updateServer():
 
         WellStatus = UpdateStateData.getroot().find('WellStatus')
         WellStatus.text = Petrolog.getWellStatus()
-        print(myXML.tostring(UpdateStateData.getroot()))
         req = urllib2.Request(url='http://petrologtest.intelectix.com/api/state',
                               data=myXML.tostring(UpdateStateData.getroot()),
-                              headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
+                              headers={'Content-Type':'text/xml',
+                                       'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
             urllib2.urlopen(req)
-        except URLError as e:
-            print 'State Data Update - Failed to open connection to server! - '+e.reason
+        except URLError:
+            print 'State Data Update - Failed to open connection to server!'
 
         # Update Graph
         time.sleep(2.5)
@@ -108,7 +108,8 @@ def updateServer():
                 tempDyna = myXML.tostring(GraphData.getroot())
                 req = urllib2.Request(url='http://petrologtest.intelectix.com/api/graph',
                                       data=tempDyna,
-                                      headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
+                                      headers={'Content-Type':'text/xml',
+                                               'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
                 try:
                     urllib2.urlopen(req)
                 except URLError:
@@ -121,7 +122,8 @@ def updateServer():
         # Command Pending?
         time.sleep(2.5)
         req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
-                                      headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
+                                      headers={'Content-Type':'text/xml',
+                                               'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
             resp = urllib2.urlopen(req)
             s = resp.read()
@@ -147,7 +149,8 @@ def updateServer():
                                                             +Petrolog.responseToServer+
                                                         '</Response>'
                                                   '</CommandResponse>',
-                                             headers={'Content-Type':'text/xml','Authorization':'DeviceNumber=19,ApiKey=test'})
+                                             headers={'Content-Type':'text/xml',
+                                                      'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
 
                 Petrolog.responseToServer = ''
                 resp = urllib2.urlopen(req)
