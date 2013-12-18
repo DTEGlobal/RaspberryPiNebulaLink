@@ -33,7 +33,7 @@ def updateServer():
 
         # Update Data
         time.sleep(2.5)
-        UpdateStateData = myXML.parse('XMLs/UpdateStateData.xml')
+        UpdateStateData = myXML.parse('/home/pi/api/XMLs/UpdateStateData.xml')
 
         Automatic = UpdateStateData.getroot().find('Automatic')
         Automatic.text = Petrolog.getAutomaticStatus()
@@ -83,7 +83,7 @@ def updateServer():
 
         WellStatus = UpdateStateData.getroot().find('WellStatus')
         WellStatus.text = Petrolog.getWellStatus()
-        req = urllib2.Request(url='http://petrologtest.intelectix.com/api/state',
+        req = urllib2.Request(url='http://petrolog.intelectix.com/api/state',
                               data=myXML.tostring(UpdateStateData.getroot()),
                               headers={'Content-Type':'text/xml',
                                        'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
@@ -94,7 +94,7 @@ def updateServer():
 
         # Update Graph
         time.sleep(2.5)
-        GraphData = myXML.parse('XMLs/GraphData.xml')
+        GraphData = myXML.parse('/home/pi/api/XMLs/GraphData.xml')
         points = GraphData.getroot().find("Points")
 
         dyna = Petrolog.getDyna()
@@ -106,7 +106,7 @@ def updateServer():
                          +str(p[0])+','+str(p[1])+'</string>'))
             try:
                 tempDyna = myXML.tostring(GraphData.getroot())
-                req = urllib2.Request(url='http://petrologtest.intelectix.com/api/graph',
+                req = urllib2.Request(url='http://petrolog.intelectix.com/api/graph',
                                       data=tempDyna,
                                       headers={'Content-Type':'text/xml',
                                                'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
@@ -121,7 +121,7 @@ def updateServer():
 
         # Command Pending?
         time.sleep(2.5)
-        req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
+        req = urllib2.Request(url='http://petrolog.intelectix.com/api/command',
                                       headers={'Content-Type':'text/xml',
                                                'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
@@ -140,7 +140,7 @@ def updateServer():
                 id = commandId.text
                 while Petrolog.responseToServer == '':
                     time.sleep(.01)
-                req = urllib2.Request(url='http://petrologtest.intelectix.com/api/command',
+                req = urllib2.Request(url='http://petrolog.intelectix.com/api/command',
                                              data='<CommandResponse>'
                                                         '<ConsoleCommandId>'
                                                             +id+
