@@ -4,6 +4,10 @@ import threading
 import time
 import G4_CPURPI01
 import apiClient
+import logging
+
+logging.basicConfig(format='%(asctime)s - [%(levelname)s]: %(message)s', filename='api.log', level=logging.INFO)
+logging.info('API Client - Started')
 
 SerialRxThread = threading.Thread(target=G4_CPURPI01.SendCommand)
 SerialRxThread.daemon = True
@@ -15,4 +19,4 @@ updateServer.daemon = True
 updateServer.start()
 
 while True:
-    a=0 #Do nothing
+    a = 0  # Do nothing

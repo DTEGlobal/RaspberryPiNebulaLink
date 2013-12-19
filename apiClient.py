@@ -21,76 +21,93 @@ import G4_CPURPI01 as Petrolog
 import xml.etree.ElementTree as myXML
 import xml.etree.ElementTree as point
 
+import uuid
+import Feeder
+
+import logging
 
 G4Command = ''
 Command = False
+
 
 def updateServer():
 
     global G4Command, Command
 
+    apiId = str(uuid.uuid4())
+    data_toPrint = "updateServer: updateServer Thread Running ..."
+
     while True:
+        # Feed Watchdog Server
+        Feeder.feeder(apiId, data_toPrint)
 
         # Update Data
         time.sleep(2.5)
         UpdateStateData = myXML.parse('/home/pi/api/XMLs/UpdateStateData.xml')
 
-        Automatic = UpdateStateData.getroot().find('Automatic')
-        Automatic.text = Petrolog.getAutomaticStatus()
+        try:
 
-        Efficiency = UpdateStateData.getroot().find('Efficiency')
-        if int(Petrolog.getTodayRuntimePercent()) < 100:
-            Efficiency.text = Petrolog.getTodayRuntimePercent()
-        else:
-            Efficiency.text = '100'
+            Automatic = UpdateStateData.getroot().find('Automatic')
+            Automatic.text = Petrolog.getAutomaticStatus()
+
+            Efficiency = UpdateStateData.getroot().find('Efficiency')
+            if int(Petrolog.getTodayRuntimePercent()) < 100:
+                Efficiency.text = Petrolog.getTodayRuntimePercent()
+            else:
+                Efficiency.text = '100'
 
 
-        KickoffCount = UpdateStateData.getroot().find('KickoffCount')
-        KickoffCount.text = Petrolog.getKickoffCount()
+            KickoffCount = UpdateStateData.getroot().find('KickoffCount')
+            KickoffCount.text = Petrolog.getKickoffCount()
 
-        MessageNumber = UpdateStateData.getroot().find('MessageNumber')
-        MessageNumber.text = Petrolog.getMessageNumber()
+            MessageNumber = UpdateStateData.getroot().find('MessageNumber')
+            MessageNumber.text = Petrolog.getMessageNumber()
 
-        NoLoad = UpdateStateData.getroot().find('NoLoad')
-        NoLoad.text = Petrolog.getNoLoad()
+            NoLoad = UpdateStateData.getroot().find('NoLoad')
+            NoLoad.text = Petrolog.getNoLoad()
 
-        NoPosition = UpdateStateData.getroot().find('NoPosition')
-        NoPosition.text = Petrolog.getNoPosition()
+            NoPosition = UpdateStateData.getroot().find('NoPosition')
+            NoPosition.text = Petrolog.getNoPosition()
 
-        PercentFillage = UpdateStateData.getroot().find('PercentFillage')
-        PercentFillage.text = Petrolog.getPercentFillage()
+            PercentFillage = UpdateStateData.getroot().find('PercentFillage')
+            PercentFillage.text = Petrolog.getPercentFillage()
 
-        PercentFillageSetting = UpdateStateData.getroot().find('PercentFillageSetting')
-        PercentFillageSetting.text = Petrolog.getPercentFillageSetting()
+            PercentFillageSetting = UpdateStateData.getroot().find('PercentFillageSetting')
+            PercentFillageSetting.text = Petrolog.getPercentFillageSetting()
 
-        PumpOff = UpdateStateData.getroot().find('PumpOff')
-        PumpOff.text = Petrolog.getPumpOff()
+            PumpOff = UpdateStateData.getroot().find('PumpOff')
+            PumpOff.text = Petrolog.getPumpOff()
 
-        SecondsToNextStart = UpdateStateData.getroot().find('SecondsToNextStart')
-        SecondsToNextStart.text = Petrolog.getSecondsToNextStart()
+            SecondsToNextStart = UpdateStateData.getroot().find('SecondsToNextStart')
+            SecondsToNextStart.text = Petrolog.getSecondsToNextStart()
 
-        SignalStrength = UpdateStateData.getroot().find('SignalStrength')
-        SignalStrength.text = Petrolog.getSignalStrength()
+            SignalStrength = UpdateStateData.getroot().find('SignalStrength')
+            SignalStrength.text = Petrolog.getSignalStrength()
 
-        StrokesLastCycle = UpdateStateData.getroot().find('StrokesLastCycle')
-        StrokesLastCycle.text = Petrolog.getStrokesLastCycle()
+            StrokesLastCycle = UpdateStateData.getroot().find('StrokesLastCycle')
+            StrokesLastCycle.text = Petrolog.getStrokesLastCycle()
 
-        StrokesThisCycle = UpdateStateData.getroot().find('StrokesThisCycle')
-        StrokesThisCycle.text = Petrolog.getStrokesThisCycle()
+            StrokesThisCycle = UpdateStateData.getroot().find('StrokesThisCycle')
+            StrokesThisCycle.text = Petrolog.getStrokesThisCycle()
 
-        TimeOut = UpdateStateData.getroot().find('TimeOut')
-        TimeOut.text = Petrolog.getTimeOut()
+            TimeOut = UpdateStateData.getroot().find('TimeOut')
+            TimeOut.text = Petrolog.getTimeOut()
 
-        WellStatus = UpdateStateData.getroot().find('WellStatus')
-        WellStatus.text = Petrolog.getWellStatus()
+            WellStatus = UpdateStateData.getroot().find('WellStatus')
+            WellStatus.text = Petrolog.getWellStatus()
+
+        except ValueError:
+            logging.error('State Data Update - Serial communications failure')
+
         req = urllib2.Request(url='http://petrolog.intelectix.com/api/state',
                               data=myXML.tostring(UpdateStateData.getroot()),
                               headers={'Content-Type':'text/xml',
                                        'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
             urllib2.urlopen(req)
-        except URLError:
-            print 'State Data Update - Failed to open connection to server!'
+        except URLError as e:
+            logging.warning('State Data Update - Failed to open connection to server! Error = %s', e.reason)
+
 
         # Update Graph
         time.sleep(2.5)
@@ -112,12 +129,10 @@ def updateServer():
                                                'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
                 try:
                     urllib2.urlopen(req)
-                except URLError:
-                    print 'Dyna Update - Failed to open connection to server!'
+                except URLError as e:
+                    logging.warning('Dyna Update - Failed to open connection to server! Error = %s', e.reason)
             except IndexError:
-                print "Empty XML"
-        else:
-            print 'Empty Dyna'
+                logging.warning('Dyna Update - Empty XML')
 
         # Command Pending?
         time.sleep(2.5)
@@ -153,7 +168,7 @@ def updateServer():
                                                       'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
 
                 Petrolog.responseToServer = ''
-                resp = urllib2.urlopen(req)
+                urllib2.urlopen(req)
 
-        except URLError:
-            print 'Console Command - Failed to open connection to server!'
+        except URLError as e:
+            logging.warning('Console Command - Failed to open connection to server! Error = %s', e.reason)

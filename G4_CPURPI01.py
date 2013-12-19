@@ -11,11 +11,15 @@ __author__ = 'Cesar'
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
-import time
 import serial
-import threading
 import bitState
 import apiClient
+
+import uuid
+import time
+import Feeder
+
+import logging
 
 messageToSend = 'Config'
 responseToServer = ''
@@ -39,18 +43,25 @@ def errorCleanUp(error):
     Rx = False
     messageToSend = 'Config'
     port.flushOutput()
-    print("TxST: Error->[{}]".format(error))
+    logging.warning("TxST: Error->[%s]", error)
 
 
 def SendCommand():
     global tenSec, Rx, messageToSend, errorCounter, _38, _39, responseToServer
 
-    print("TxST: SendCommand Thread Running ...")
+    serialId = str(uuid.uuid4())
+    data_toPrint = "serialComs: serialComs Thread Running ..."
+
+    logging.info("TxST: SendCommand Thread Running ...")
+
     port.flushOutput()
 
     waitingForConsoleCommand = False
 
     while True:
+        # Feed Watchdog Server
+        Feeder.feeder(serialId, data_toPrint)
+
         if apiClient.Command:
             command = apiClient.G4Command+"\x0D"
             waitingForConsoleCommand = True
@@ -87,14 +98,14 @@ def SendCommand():
             Rx = True
 
         data_toPrint = command[:-1]
-        # print("[{}]TxST: Tx Data->[{}]".format(time.clock(), data_toPrint))
+        logging.debug("[%s]TxST: Tx Data->[%s]".format(time.clock(), data_toPrint))
         port.write(command)
         while Rx:
             try:
                 MessageFromSerial = port.readline()
                 # Remove last 3 chars (CR LF)
                 data_toPrint = MessageFromSerial[:-2]
-                # print("[{}]RxST: Rx Data->[{}]".format(time.clock(), data_toPrint))
+                logging.debug("[%s]RxST: Rx Data->[%s]".format(time.clock(), data_toPrint))
                 # Check Rx contents
                 if waitingForConsoleCommand:
                     Rx = False
@@ -103,13 +114,13 @@ def SendCommand():
                         responseToServer = 'Error: Time Out'
                     else:
                         responseToServer = MessageFromSerial[:-2]
-                    print ('Console Command Response: '+responseToServer)
+                    logging.info('Console Command Response: %s', responseToServer)
                     waitingForConsoleCommand = False
                     apiClient.Command = False
                 elif MessageFromSerial[3] == 'Z':
                     Rx = False
                     messageToSend = 'MD0'
-                    print ('Configured! '+MessageFromSerial)
+                    logging.info('Configured! %s', MessageFromSerial)
                 elif MessageFromSerial[3] == 'D':
                     Rx = False
                     messageToSend = 'M1'
@@ -156,6 +167,7 @@ def SendCommand():
             except IndexError as i:
                 errorCleanUp(i)
 
+
 def getDyna():
     global _38
     char = 0
@@ -171,7 +183,7 @@ def getDyna():
                 pair = (int(_38[char:char+4], 16), int(_38[char+4:char+4+4], 16))
                 dyna.append(pair)
                 char += 8
-            except ValueError as e:
+            except ValueError:
                 return ''
 
 
