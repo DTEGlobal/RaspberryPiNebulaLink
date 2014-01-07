@@ -38,8 +38,6 @@ def updateServer():
     data_toPrint = "updateServer: updateServer Thread Running ..."
 
     while True:
-        # Feed Watchdog Server
-        Feeder.feeder(apiId, data_toPrint)
 
         # Update Data
         time.sleep(2.5)
@@ -105,6 +103,8 @@ def updateServer():
                                        'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
             urllib2.urlopen(req)
+            # Feed Watchdog Server only if request OK
+            Feeder.feeder(apiId, data_toPrint)
         except URLError as e:
             logging.warning('State Data Update - Failed to open connection to server! Error = %s', e.reason)
 
