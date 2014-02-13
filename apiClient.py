@@ -1,5 +1,3 @@
-from urllib2 import URLError
-
 __author__ = 'Cesar'
 
 #-------------------------------------------------------------------------------
@@ -14,6 +12,7 @@ __author__ = 'Cesar'
 #-------------------------------------------------------------------------------
 
 import urllib2
+from urllib2 import URLError
 import time
 
 import G4_CPURPI01 as Petrolog
@@ -102,12 +101,15 @@ def updateServer():
                               headers={'Content-Type':'text/xml',
                                        'Authorization':'DeviceNumber=1943,ApiKey=UGV0cm9sb2dDbGllbnRl'})
         try:
-            urllib2.urlopen(req)
-            # Feed Watchdog Server only if request OK
-            Feeder.feeder(apiId, data_toPrint)
+            resp = urllib2.urlopen(req)
         except URLError as e:
             logging.warning('State Data Update - Failed to open connection to server! Error = %s', e.reason)
-
+        else:
+            r = resp.read()
+            respuesta = myXML.ElementTree(myXML.fromstring(r))
+            if respuesta.getroot().getiterator()[3].text == 'true':
+                # Feed Watchdog Server only if request OK
+                Feeder.feeder(apiId, data_toPrint)
 
         # Update Graph
         time.sleep(2.5)

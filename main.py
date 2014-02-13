@@ -16,7 +16,7 @@ SerialRxThread.daemon = True
 SerialRxThread.start()
 
 time.sleep(5)
-updateServer = threading.Thread(target=apiClient.updateServer())
+updateServer = threading.Thread(target=apiClient.updateServer)
 updateServer.daemon = True
 updateServer.start()
 
